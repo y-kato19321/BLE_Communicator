@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">BLE Communicator</string>
+    <string name="app_name">サーマルカメラ設定アプリ</string>
 
     <!-- MainActivity トースト用 -->
     <string name="ble_is_not_supported">BLE is not supported</string>
@@ -10,12 +10,13 @@
     <string name="search">Search</string>
 
     <!-- MainActivity ラベル用 -->
-    <string name="device_name">Device Name : </string>
-    <string name="device_address">Device Address : </string>
-    <string name="connect">Connect</string>
-    <string name="disconnect">Disconnect</string>
-    <string name="readData">readData</string>
-    <string name="writeData">writeData</string>
+    <string name="device_name">デバイス名: </string>
+    <string name="device_address">MACアドレス : </string>
+    <string name="startscan">デバイス検索</string>
+    <string name="connect">接続</string>
+    <string name="disconnect">切断</string>
+    <string name="readData">設定受信</string>
+    <string name="writeData">設定送信</string>
 
     <!-- DeviceListActivity トースト用 -->
     <string name="unknown_device">Unknown device</string>

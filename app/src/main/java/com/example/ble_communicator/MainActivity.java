@@ -60,6 +60,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private BluetoothGatt mBluetoothGatt = null;    // Gattサービスの検索、キャラスタリスティックの読み書き
 
     // GUIアイテム
+    private Button mButton_StartScan;    //スキャン開始ボタン
     private Button mButton_Connect;         // 接続ボタン
     private Button mButton_Disconnect;      // 切断ボタン
     private Button mButton_ReadData;        // キャラクタリスティック1の読み込みボタン
@@ -226,6 +227,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //sato　add }
 
         // GUIアイテム
+
+        //sato add {
+        mButton_StartScan = (Button)findViewById( R.id.button_startscan );
+        mButton_StartScan.setOnClickListener( this );
+        //sato add }
         mButton_Connect = (Button)findViewById( R.id.button_connect );
         mButton_Connect.setOnClickListener( this );
         mButton_Disconnect = (Button)findViewById( R.id.button_disconnect );
@@ -378,9 +384,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick( View v )
     {
+        // sato add {
+        if( mButton_StartScan.getId() == v.getId() )//スキャン開始
+        {
+            Intent devicelistactivityIntent = new Intent( this, DeviceListActivity.class );
+            startActivityForResult( devicelistactivityIntent, REQUEST_CONNECTDEVICE );
+            return;
+        }
+        // sato add }
         if( mButton_Connect.getId() == v.getId() )
         {
-            mButton_Connect.setEnabled( false );    // 接続ボタンの無効化（連打対策）
             connect();            // 接続
             return;
         }
