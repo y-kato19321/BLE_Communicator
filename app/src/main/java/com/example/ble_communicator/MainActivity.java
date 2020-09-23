@@ -48,7 +48,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     // Private Service
     private static final UUID UUID_SERVICE_PRIVATE         = UUID.fromString( "13a28130-8883-49a8-8bdb-42bc1a7107f4" );
     private static final UUID UUID_CHARACTERISTIC_PRIVATE1 = UUID.fromString( "A2935077-201F-44EB-82E8-10CC02AD8CE1" );
-    private static final UUID UUID_CHARACTERISTIC_PRIVATE2 = UUID.fromString( "FF6B1548-8FE6-11E7-ABC4-CEC278B6B50A" );
 
     // 定数
     private static final int REQUEST_ENABLEBLUETOOTH = 1; // Bluetooth機能の有効化要求時の識別コード
@@ -157,15 +156,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             // キャラクタリスティックごとに個別の処理
             if( UUID_CHARACTERISTIC_PRIVATE1.equals( characteristic.getUuid() ) )
             {    // キャラクタリスティック１：データサイズは、2バイト（数値を想定。0～65,535）
-                byte[]       byteChara = characteristic.getValue();
-                ByteBuffer   bb        = ByteBuffer.wrap( byteChara );
-                final String strChara  = String.valueOf( bb.getShort() );
+                byte[] byteDataList = characteristic.getValue();
+
+                //受信したデータから設定値を取得
+                DeviceSettingData setData = new DeviceSettingData();
+                if (setData != null) {
+                    setData.setByteDataList(byteDataList);
+                    viewmodel.setDeviceSettingData(setData);
+                }
                 runOnUiThread( new Runnable()
                 {
                     public void run()
                     {
                         // GUIアイテムへの反映
-                        ( (TextView)findViewById( R.id.textview_readchara1 ) ).setText( strChara );
+                        //( (TextView)findViewById( R.id.textview_readchara1 ) ).setText( strChara );
+
+                        //受信に成功後、NumberPickerは設定する
+                        initNPControls();
+                        //受信したバイナリデータを変数に格納し、UIに表示する
+                        viewmodel.setDeviceSettingFromBLEData(null);
+
                     }
                 } );
                 return;
@@ -181,7 +191,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 return;
             }
             // キャラクタリスティックごとに個別の処理
-            if( UUID_CHARACTERISTIC_PRIVATE2.equals( characteristic.getUuid() ) )
+            if( UUID_CHARACTERISTIC_PRIVATE1.equals( characteristic.getUuid() ) )
             {    // キャラクタリスティック２：データサイズは、8バイト（文字列を想定。半角文字8文字）
                 runOnUiThread( new Runnable()
                 {
@@ -413,13 +423,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             mButton_WriteData.setEnabled( false );    // 書き込みボタンの無効化（連打対策）
             //mButton_WriteWorld.setEnabled( false );    // 書き込みボタンの無効化（連打対策）
 
-            //sato add {
             //現在の設定値を取得
-            DeviceSettingData setdata = viewmodel.getDeviceSettingData();
-            //※加藤さん、setdataから、送信するバイナリデータを作ってください
-            //sato add }
+            DeviceSettingData setData = viewmodel.getDeviceSettingData();
+            byte[] dataList = setData.createByteDataList();
 
-            writeCharacteristic( UUID_SERVICE_PRIVATE, UUID_CHARACTERISTIC_PRIVATE2, "Hello" );
+            writeCharacteristic( UUID_SERVICE_PRIVATE, UUID_CHARACTERISTIC_PRIVATE1, dataList );
             return;
         }
     }
@@ -494,7 +502,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     // キャラクタリスティックの書き込み
-    private void writeCharacteristic( UUID uuid_service, UUID uuid_characteristic, String string )
+    private void writeCharacteristic( UUID uuid_service, UUID uuid_characteristic, byte[] dataList )
     {
         if( null == mBluetoothGatt )
         {
@@ -502,7 +510,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
         BluetoothGattCharacteristic blechar = mBluetoothGatt.getService( uuid_service ).getCharacteristic( uuid_characteristic );
-        blechar.setValue( string );
+        blechar.setValue( dataList );
         mBluetoothGatt.writeCharacteristic( blechar );
     }
 
