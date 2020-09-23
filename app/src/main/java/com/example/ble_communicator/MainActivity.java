@@ -1,6 +1,8 @@
 package com.example.ble_communicator;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -19,14 +21,29 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.NumberPicker;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.example.ble_communicator.data.DeviceSettingData;
+import com.example.ble_communicator.viewmodel.MainActivityViewModel;
 
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener
 {
+    //sato　add {
+    //ViewModel
+    private MainActivityViewModel viewmodel = null;
+    //温度誤差
+    private NumberPicker npcalibration = null;
+    //高温閾値
+    private NumberPicker nphightemperaturethreshold = null;
+    //基準温度更新時間
+    private NumberPicker npreferencetemperatureupdatetime = null;
+    //sato　add }
+
     // 定数（Bluetooth LE Gatt UUID）
     // Private Service
     private static final UUID UUID_SERVICE_PRIVATE         = UUID.fromString( "13a28130-8883-49a8-8bdb-42bc1a7107f4" );
@@ -185,6 +202,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     {
         super.onCreate( savedInstanceState );
         setContentView( R.layout.activity_main );
+
+
+        //sato　add {
+        //ViewModelのロード
+        viewmodel = new ViewModelProvider(this).get(MainActivityViewModel.class);
+
+        //画面上のコントロールの初期設定
+        //initControls();
+
+        // Create the observer which updates the UI.
+        final Observer<DeviceSettingData> settingObserver = new Observer<DeviceSettingData>() {
+
+            @Override
+            public void onChanged(DeviceSettingData deviceSettingData) {
+                // Update the UI, in this case, a TextView.
+                dsipDeviceSetting(deviceSettingData);
+            }
+        };
+
+        // Observe the LiveData, passing in this activity as the LifecycleOwner and the observer.
+        viewmodel.getDeviceSettingDataMutable().observe(this, settingObserver);
+        //sato　add }
 
         // GUIアイテム
         mButton_Connect = (Button)findViewById( R.id.button_connect );
@@ -360,6 +399,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         {
             mButton_WriteData.setEnabled( false );    // 書き込みボタンの無効化（連打対策）
             //mButton_WriteWorld.setEnabled( false );    // 書き込みボタンの無効化（連打対策）
+
+            //sato add {
+            //現在の設定値を取得
+            DeviceSettingData setdata = viewmodel.getDeviceSettingData();
+            //※加藤さん、setdataから、送信するバイナリデータを作ってください
+            //sato add }
+
             writeCharacteristic( UUID_SERVICE_PRIVATE, UUID_CHARACTERISTIC_PRIVATE2, "Hello" );
             return;
         }
@@ -412,12 +458,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     // キャラクタリスティックの読み込み
     private void readCharacteristic( UUID uuid_service, UUID uuid_characteristic )
     {
+
         if( null == mBluetoothGatt )
         {
             return;
         }
         BluetoothGattCharacteristic blechar = mBluetoothGatt.getService( uuid_service ).getCharacteristic( uuid_characteristic );
         mBluetoothGatt.readCharacteristic( blechar );
+
+        //sato　add {
+        //受信したデータから設定値を取得
+        //※加藤さん、受信データの内容をsetdataに格納し、setDeviceSettingDataに渡してください
+        DeviceSettingData setdata = new DeviceSettingData();
+        if (setdata != null) {
+            viewmodel.setDeviceSettingData(setdata);
+        }
+        //受信に成功後、NumberPickerは設定する
+        initNPControls();
+        //受信したバイナリデータを変数に格納し、UIに表示する
+        viewmodel.setDeviceSettingFromBLEData(null);
+        //sato　add }
     }
 
     // キャラクタリスティックの書き込み
@@ -427,8 +487,82 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         {
             return;
         }
+
         BluetoothGattCharacteristic blechar = mBluetoothGatt.getService( uuid_service ).getCharacteristic( uuid_characteristic );
         blechar.setValue( string );
         mBluetoothGatt.writeCharacteristic( blechar );
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // 以下　sato 実装
+
+    /**
+     * NumberPickerコントロールの初期設定を行る
+     */
+    private void initNPControls() {
+
+        //温度誤差
+        if (npcalibration == null) {
+
+            npcalibration = (NumberPicker) findViewById(R.id.np_calibration);
+        }
+        npcalibration.setMaxValue(viewmodel.getCalibralinNPMaxvalue());
+        npcalibration.setMinValue(0);
+        npcalibration.setDisplayedValues(viewmodel.getCalibrationListContents());
+        npcalibration.setWrapSelectorWheel(false);
+        npcalibration.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+            @Override
+            public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
+                viewmodel.onCalibrationChange(oldVal, newVal);
+            }
+        });
+
+        //高温閾値範囲設定
+        if (nphightemperaturethreshold == null) {
+            nphightemperaturethreshold = (NumberPicker) findViewById(R.id.np_hightemperaturethreshold);
+        }
+        nphightemperaturethreshold.setMaxValue(viewmodel.getHighTemperatureThresholdMaxvalue());
+        nphightemperaturethreshold.setMinValue(0);
+        nphightemperaturethreshold.setDisplayedValues(viewmodel.getHighTemperatureThresholdListContents());
+        nphightemperaturethreshold.setWrapSelectorWheel(false);
+        nphightemperaturethreshold.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+            @Override
+            public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
+                viewmodel.onHighTemperatureThresholdChange(oldVal, newVal);
+            }
+        });
+
+        //基準温度更新時間
+        if (npreferencetemperatureupdatetime == null) {
+            npreferencetemperatureupdatetime = (NumberPicker) findViewById(R.id.np_referencetemperatureupdatetime);
+        }
+        npreferencetemperatureupdatetime.setMaxValue(viewmodel.getReferenceTemperatureUpdatetimeMaxvalue());
+        npreferencetemperatureupdatetime.setMinValue(0);
+        npreferencetemperatureupdatetime.setDisplayedValues(viewmodel.getReferenceTemperatureUpdatetimeListContents());
+        npreferencetemperatureupdatetime.setWrapSelectorWheel(false);
+        npreferencetemperatureupdatetime.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+            @Override
+            public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
+                viewmodel.onReferenceUDTimeChange(oldVal, newVal);
+            }
+        });
+    }
+
+    /**
+     * 最新の設定を画面の各コントロールに表示する
+     */
+    private void dsipDeviceSetting(DeviceSettingData deviceSettingData) {
+
+        if (npcalibration != null && nphightemperaturethreshold != null && npreferencetemperatureupdatetime != null ) {
+            //キャリブレーション
+            npcalibration.setValue(viewmodel.getCalibrationNPIndexOf());
+
+            //高温閾値
+            nphightemperaturethreshold.setValue(viewmodel.getHighTemperatureThresholdNPIndexOf());
+
+            //基準温度更新時間
+            npreferencetemperatureupdatetime.setValue(viewmodel.getReferenceTemperatureUpdatetimeNPIndexOf());
+        }
+
     }
 }
