@@ -1,9 +1,11 @@
 package com.example.ble_communicator;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
+import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -51,6 +53,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     // 定数
     private static final int REQUEST_ENABLEBLUETOOTH = 1; // Bluetooth機能の有効化要求時の識別コード
     private static final int REQUEST_CONNECTDEVICE   = 2; // デバイス接続要求時の識別コード
+    private static final int REQUEST_ACCESS_FINE_LOCAION  = 3; // ACCESS_FINE_LOCAION要求時の識別コード
 
     // メンバー変数
     private BluetoothAdapter mBluetoothAdapter;    // BluetoothAdapter : Bluetooth処理で必要
@@ -237,6 +240,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mButton_WriteData = (Button)findViewById( R.id.button_writehello );
         mButton_WriteData.setOnClickListener( this );
 
+        //ACCESS_FINE_LOCATIONの許可取得
+        if(ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION ) != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_ACCESS_FINE_LOCAION);
+            return;
+        }
+
 
         // Android端末がBLEをサポートしてるかの確認
         if( !getPackageManager().hasSystemFeature( PackageManager.FEATURE_BLUETOOTH_LE ) )
@@ -278,10 +288,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if( !mDeviceAddress.equals( "" ) )
         {
             mButton_Connect.setEnabled( true );
+            // 接続ボタンを押す
+            //mButton_Connect.callOnClick();
         }
 
-        // 接続ボタンを押す
-        mButton_Connect.callOnClick();
     }
 
 
@@ -432,6 +442,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // 接続
         BluetoothDevice device = mBluetoothAdapter.getRemoteDevice( mDeviceAddress );
         mBluetoothGatt = device.connectGatt( this, false, mGattcallback );
+
+        //ボタンの有効無効設定
+        mButton_Connect.setEnabled( false );
+        mButton_Disconnect.setEnabled( true );
     }
 
     // 切断
@@ -450,16 +464,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //     切断時のコールバックでmBluetoothGatt.connect()を呼んでおくと、接続可能範囲に入ったら自動接続する。
         mBluetoothGatt.close();
         mBluetoothGatt = null;
+
         // GUIアイテムの有効無効の設定
-        // 接続ボタンのみ有効にする
-        mButton_Connect.setEnabled( true );
+        // デバイスアドレスが空でなければ、接続ボタンを有効にする。
+        if( !mDeviceAddress.equals( "" ) )
+        {
+            mButton_Connect.setEnabled( true );
+        }
         mButton_Disconnect.setEnabled( false );
         mButton_ReadData.setEnabled( false );
         //mButton_ReadChara2.setEnabled( false );
         mButton_WriteData.setEnabled( false );
         //mButton_WriteWorld.setEnabled( false );
 
-        //コネクト状態の場合のみ、ユーザはNumberPickerから設定可能とする
+        //コネクト状態 + 受信後の場合のみ、ユーザはNumberPickerから設定可能とする
         setEnableNP(false);
     }
 
