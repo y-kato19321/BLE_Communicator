@@ -26,11 +26,30 @@ public class DeviceSettingData {
     }
 
     // サーバーからのデータをアプリで扱うデータに変換
+    // 範囲を超えた値が来たら、範囲内の値に丸め込む
     public void setByteDataList(byte[] array)
     {
         calibration = (double)array[1];
+        if (calibration < -5.0) {
+            calibration = -5.0;
+        } else if (5.0 < calibration) {
+            calibration = 5.0;
+        }
+
         hightemperaturethreshold = ((double)(array[2] + 300)) / 10;
+        if (hightemperaturethreshold < -34.5) {
+            hightemperaturethreshold = -34.5;
+        } else if (40.5 < hightemperaturethreshold) {
+            hightemperaturethreshold = 40.5;
+        }
+
+
         referenceTemperatureUpdateTime = (int)array[3];
+        if (referenceTemperatureUpdateTime < 10) {
+            referenceTemperatureUpdateTime = 10;
+        } else if (60 < referenceTemperatureUpdateTime) {
+            referenceTemperatureUpdateTime = 60;
+        }
     }
 
 }

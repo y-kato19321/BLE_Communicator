@@ -167,14 +167,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 {
                     public void run()
                     {
-                        // GUIアイテムへの反映
-                        //( (TextView)findViewById( R.id.textview_readchara1 ) ).setText( strChara );
-
-                        //受信に成功後、NumberPickerは設定する
-                        initNPControls();
-                        //受信したバイナリデータを変数に格納し、UIに表示する
-                        viewmodel.setDeviceSettingFromBLEData(null);
-
+                        //受信に成功後、NumberPickerをEnableにする
+                        setEnableNP(true);
                     }
                 } );
                 return;
