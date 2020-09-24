@@ -8,10 +8,10 @@ public class DeviceSettingData {
     public double calibration = 0.0;
 
     //高温閾値
-    public double hightemperaturethreshold = 0.0;
+    public double hightemperaturethreshold = 37.5;
 
     //基準温度更新時間
-    public int referenceTemperatureUpdateTime = 0;
+    public int referenceTemperatureUpdateTime = 10;
 
     // アプリで扱っているデータをサーバーで扱えるように変換
     public byte[] createByteDataList()

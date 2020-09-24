@@ -17,6 +17,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -33,7 +34,6 @@ import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener
 {
-    //sato　add {
     //ViewModel
     private MainActivityViewModel viewmodel = null;
     //温度誤差
@@ -42,7 +42,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private NumberPicker nphightemperaturethreshold = null;
     //基準温度更新時間
     private NumberPicker npreferencetemperatureupdatetime = null;
-    //sato　add }
 
     // 定数（Bluetooth LE Gatt UUID）
     // Private Service
@@ -214,34 +213,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate( savedInstanceState );
         setContentView( R.layout.activity_main );
 
-
-        //sato　add {
         //ViewModelのロード
         viewmodel = new ViewModelProvider(this).get(MainActivityViewModel.class);
 
         //画面上のコントロールの初期設定
-        //initControls();
+        initNPControls();
 
-        // Create the observer which updates the UI.
+        // Livedata受け取りをUIに反映
         final Observer<DeviceSettingData> settingObserver = new Observer<DeviceSettingData>() {
 
             @Override
             public void onChanged(DeviceSettingData deviceSettingData) {
-                // Update the UI, in this case, a TextView.
                 dsipDeviceSetting(deviceSettingData);
             }
         };
 
-        // Observe the LiveData, passing in this activity as the LifecycleOwner and the observer.
+        // Livedata受け取り
         viewmodel.getDeviceSettingDataMutable().observe(this, settingObserver);
-        //sato　add }
 
-        // GUIアイテム
-
-        //sato add {
+        //Buttonリスナセット
         mButton_StartScan = (Button)findViewById( R.id.button_startscan );
         mButton_StartScan.setOnClickListener( this );
-        //sato add }
         mButton_Connect = (Button)findViewById( R.id.button_connect );
         mButton_Connect.setOnClickListener( this );
         mButton_Disconnect = (Button)findViewById( R.id.button_disconnect );
@@ -394,14 +386,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick( View v )
     {
-        // sato add {
         if( mButton_StartScan.getId() == v.getId() )//スキャン開始
         {
             Intent devicelistactivityIntent = new Intent( this, DeviceListActivity.class );
             startActivityForResult( devicelistactivityIntent, REQUEST_CONNECTDEVICE );
             return;
         }
-        // sato add }
         if( mButton_Connect.getId() == v.getId() )
         {
             connect();            // 接続
@@ -474,31 +464,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //mButton_ReadChara2.setEnabled( false );
         mButton_WriteData.setEnabled( false );
         //mButton_WriteWorld.setEnabled( false );
+
+        //コネクト状態の場合のみ、ユーザはNumberPickerから設定可能とする
+        setEnableNP(false);
     }
 
     // キャラクタリスティックの読み込み
     private void readCharacteristic( UUID uuid_service, UUID uuid_characteristic )
     {
-
         if( null == mBluetoothGatt )
         {
             return;
         }
         BluetoothGattCharacteristic blechar = mBluetoothGatt.getService( uuid_service ).getCharacteristic( uuid_characteristic );
-        mBluetoothGatt.readCharacteristic( blechar );
+        boolean res = mBluetoothGatt.readCharacteristic( blechar );
 
-        //sato　add {
+        //結果を表示
+        dispConnectionResult(connectRecieve, res);
+
         //受信したデータから設定値を取得
-        //※加藤さん、受信データの内容をsetdataに格納し、setDeviceSettingDataに渡してください
-        DeviceSettingData setdata = new DeviceSettingData();
-        if (setdata != null) {
-            viewmodel.setDeviceSettingData(setdata);
+        if (res) {
+            DeviceSettingData setdata = new DeviceSettingData();
+            if (setdata != null) {
+                //受信に成功後、NumberPickerはEnableとなりユーザ設定を許可する
+                setEnableNP(true);
+                viewmodel.setDeviceSettingData(setdata);
+            }
         }
-        //受信に成功後、NumberPickerは設定する
-        initNPControls();
-        //受信したバイナリデータを変数に格納し、UIに表示する
-        viewmodel.setDeviceSettingFromBLEData(null);
-        //sato　add }
     }
 
     // キャラクタリスティックの書き込み
@@ -511,11 +503,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         BluetoothGattCharacteristic blechar = mBluetoothGatt.getService( uuid_service ).getCharacteristic( uuid_characteristic );
         blechar.setValue( dataList );
-        mBluetoothGatt.writeCharacteristic( blechar );
-    }
+        boolean res = mBluetoothGatt.writeCharacteristic( blechar );
 
-    ////////////////////////////////////////////////////////////////////////////
-    // 以下　sato 実装
+        //結果を表示
+        dispConnectionResult(connectSend, true);
+    }
 
     /**
      * NumberPickerコントロールの初期設定を行る
@@ -531,6 +523,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         npcalibration.setMinValue(0);
         npcalibration.setDisplayedValues(viewmodel.getCalibrationListContents());
         npcalibration.setWrapSelectorWheel(false);
+        npcalibration.setDescendantFocusability(NumberPicker.FOCUS_BLOCK_DESCENDANTS);
         npcalibration.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
             @Override
             public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
@@ -546,6 +539,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         nphightemperaturethreshold.setMinValue(0);
         nphightemperaturethreshold.setDisplayedValues(viewmodel.getHighTemperatureThresholdListContents());
         nphightemperaturethreshold.setWrapSelectorWheel(false);
+        nphightemperaturethreshold.setDescendantFocusability(NumberPicker.FOCUS_BLOCK_DESCENDANTS);
         nphightemperaturethreshold.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
             @Override
             public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
@@ -561,12 +555,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         npreferencetemperatureupdatetime.setMinValue(0);
         npreferencetemperatureupdatetime.setDisplayedValues(viewmodel.getReferenceTemperatureUpdatetimeListContents());
         npreferencetemperatureupdatetime.setWrapSelectorWheel(false);
+        npreferencetemperatureupdatetime.setDescendantFocusability(NumberPicker.FOCUS_BLOCK_DESCENDANTS);
         npreferencetemperatureupdatetime.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
             @Override
             public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
                 viewmodel.onReferenceUDTimeChange(oldVal, newVal);
             }
         });
+
+        setEnableNP(false);
+    }
+
+    /**
+     * NumberPickerコントロールのEnable/Disable設定
+     * @param enable
+     */
+    void setEnableNP(boolean enable) {
+        if (npcalibration != null && nphightemperaturethreshold != null && npreferencetemperatureupdatetime != null ) {
+            npcalibration.setEnabled(enable);
+            nphightemperaturethreshold.setEnabled(enable);
+            npreferencetemperatureupdatetime.setEnabled(enable);
+        }
     }
 
     /**
@@ -584,6 +593,41 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             //基準温度更新時間
             npreferencetemperatureupdatetime.setValue(viewmodel.getReferenceTemperatureUpdatetimeNPIndexOf());
         }
+    }
 
+    /**
+     * 通信結果を表示する
+     * @param sendorrecv
+     * @param result
+     */
+    private static final int connectSend = 0;
+    private static final int connectRecieve = 1;
+    private void dispConnectionResult(int sendorrecv, boolean result) {
+        String message = "";
+
+        switch(sendorrecv) {
+            case connectSend: {
+                if (result) {
+                    message = "送信しました";
+                }
+                else {
+                    message = "送信に失敗しました";
+                }
+            }
+            break;
+            case connectRecieve: {
+                if (result) {
+                    message = "受信しました";
+                }
+                else {
+                    message = "受信に失敗しました";
+                }
+            }
+        }
+
+        Toast toast = Toast.makeText(this, message, Toast.LENGTH_LONG);
+        // 位置調整
+        toast.setGravity(Gravity.CENTER, 0, 0);
+        toast.show();
     }
 }

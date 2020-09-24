@@ -55,7 +55,7 @@ public class MainActivityViewModel extends ViewModel {
      * @param bledata
      */
     public void setDeviceSettingFromBLEData(BluetoothGattCharacteristic bledata) {
-        ldsettingdata.setValue(devicedata);
+        ldsettingdata.postValue(devicedata);
     }
 
     /**
@@ -63,7 +63,7 @@ public class MainActivityViewModel extends ViewModel {
      * @return
      */
     public MutableLiveData<DeviceSettingData> getDeviceSettingDataMutable() {
-        ldsettingdata.setValue(devicedata);
+        ldsettingdata.postValue(devicedata);
         return ldsettingdata;
     }
 
@@ -147,7 +147,7 @@ public class MainActivityViewModel extends ViewModel {
      */
     public void onCalibrationChange(int oldv, int newv) {
         devicedata.calibration = npdata.getCalibrationIndexDoublenum(newv);
-        ldsettingdata.setValue(devicedata);
+        ldsettingdata.postValue(devicedata);
     }
 
     /**
@@ -157,7 +157,7 @@ public class MainActivityViewModel extends ViewModel {
      */
     public void onHighTemperatureThresholdChange(int oldv, int newv) {
         devicedata.hightemperaturethreshold = npdata.getHighTemperatureThresholdNPIndexDoublenum(newv);
-        ldsettingdata.setValue(devicedata);
+        ldsettingdata.postValue(devicedata);
     }
 
     /**
@@ -167,7 +167,7 @@ public class MainActivityViewModel extends ViewModel {
      */
     public void onReferenceUDTimeChange(int oldv, int newv) {
         devicedata.referenceTemperatureUpdateTime = npdata.getReferenceUDTimeChangeIntnum(newv);
-        ldsettingdata.setValue(devicedata);
+        ldsettingdata.postValue(devicedata);
     }
 
 }
