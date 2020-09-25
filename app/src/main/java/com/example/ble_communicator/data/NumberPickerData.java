@@ -8,11 +8,10 @@ public class NumberPickerData {
     private static String preplus = "+";
     private static String plamaizero = "±0.0";
 
-    //キャリブレーションの設定
+    //温度誤差の設定
     final String[] np_calibration_list = {
-            "+5.0", "+4.5", "+4.0", "+3.5", "+3.0", "+2.5", "+2.0", "+1.5", "+1.0", "+0.5",
-            "±0.0",
-            "-0.5", "-1.0", "-1.5", "-2.0", "-2.5", "-3.0", "-3.5", "-4.0", "-4.5", "-5.0"
+            "+6.0", "+5.5", "+5.0", "+4.5", "+4.0", "+3.5", "+3.0", "+2.5", "+2.0", "+1.5", "+1.0", "+0.5",
+            "±0.0"
     };
 
     //高温閾値の設定
@@ -27,7 +26,7 @@ public class NumberPickerData {
     };
 
     final String[] np_referencetemperatureupdatetime_list = {
-            "10", "20", "30", "40", "50", "60"
+            "60", "50", "40", "30", "20", "10"
     };
 
 

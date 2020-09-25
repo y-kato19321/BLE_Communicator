@@ -30,10 +30,10 @@ public class DeviceSettingData {
     public void setByteDataList(byte[] array)
     {
         calibration = (double)array[1];
-        if (calibration < -5.0) {
-            calibration = -5.0;
-        } else if (5.0 < calibration) {
-            calibration = 5.0;
+        if (calibration < 0.0) {
+            calibration = 0.0;
+        } else if (6.0 < calibration) {
+            calibration = 6.0;
         }
 
         hightemperaturethreshold = ((double)(array[2] + 300)) / 10;

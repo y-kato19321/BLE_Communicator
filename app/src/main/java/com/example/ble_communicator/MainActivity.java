@@ -242,11 +242,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         //ACCESS_FINE_LOCATIONの許可取得
         if(ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION ) != PackageManager.PERMISSION_GRANTED) {
-
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_ACCESS_FINE_LOCAION);
             return;
         }
-
 
         // Android端末がBLEをサポートしてるかの確認
         if( !getPackageManager().hasSystemFeature( PackageManager.FEATURE_BLUETOOTH_LE ) )
@@ -528,7 +526,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         //温度誤差
         if (npcalibration == null) {
-
             npcalibration = (NumberPicker) findViewById(R.id.np_calibration);
         }
         npcalibration.setMaxValue(viewmodel.getCalibralinNPMaxvalue());
