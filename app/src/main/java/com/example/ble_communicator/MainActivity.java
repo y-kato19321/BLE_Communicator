@@ -372,6 +372,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     // オプションメニューのアイテム選択時の処理
+    /*
     @Override
     public boolean onOptionsItemSelected( MenuItem item )
     {
@@ -384,6 +385,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         return false;
     }
+    */
 
     @Override
     public void onClick( View v )
