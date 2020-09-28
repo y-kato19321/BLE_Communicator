@@ -6,8 +6,8 @@ android {
 
     defaultConfig {
         applicationId "com.example.ble_communicator"
-        minSdkVersion 23
-        targetSdkVersion 21
+        minSdkVersion 22
+        targetSdkVersion 30
         versionCode 1
         versionName "1.0"
 
