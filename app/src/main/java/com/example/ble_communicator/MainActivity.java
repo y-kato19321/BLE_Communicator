@@ -492,7 +492,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //結果を表示
         dispConnectionResult(connectRecieve, res);
 
-        //受信したデータから設定値を取得
+/*        //受信したデータから設定値を取得
         if (res) {
             DeviceSettingData setdata = new DeviceSettingData();
             if (setdata != null) {
@@ -501,6 +501,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 viewmodel.setDeviceSettingData(setdata);
             }
         }
+ */
     }
 
     // キャラクタリスティックの書き込み
