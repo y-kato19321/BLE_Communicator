@@ -5,11 +5,14 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
+import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Bundle;
+import android.os.ParcelUuid;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -23,6 +26,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 public class DeviceListActivity extends AppCompatActivity implements AdapterView.OnItemClickListener
 {
@@ -124,6 +129,7 @@ public class DeviceListActivity extends AppCompatActivity implements AdapterView
 	private DeviceListAdapter mDeviceListAdapter;    // リストビューの内容
 	private Handler           mHandler;                            // UIスレッド操作ハンドラ : 「一定時間後にスキャンをやめる処理」で必要
 	private boolean mScanning = false;                // スキャン中かどうかのフラグ
+	private UUID mUUIDService;							// スキャンするサーバーのUUID
 
 	private ArrayList<BluetoothDevice> mmDeviceList;
 
@@ -181,6 +187,8 @@ public class DeviceListActivity extends AppCompatActivity implements AdapterView
 			finish();    // アプリ終了宣言
 			return;
 		}
+
+		mUUIDService = (UUID)getIntent().getSerializableExtra("UUID_SERVICE");
 	}
 
 	// 初回表示時、および、ポーズからの復帰時
@@ -265,10 +273,27 @@ public class DeviceListActivity extends AppCompatActivity implements AdapterView
 		}, SCAN_PERIOD );
 
 		mScanning = true;
-		scanner.startScan( mLeScanCallback );
+		scanner.startScan( buildScanFilters(), buildScanSettings(),mLeScanCallback );
 
 		// メニューの更新
 		invalidateOptionsMenu();
+	}
+
+	private List<ScanFilter> buildScanFilters() {
+		List<ScanFilter> scanFilters = new ArrayList<>();
+
+		ScanFilter.Builder builder = new ScanFilter.Builder();
+		// Comment out the below line to see all BLE devices around you
+		builder.setServiceUuid(new ParcelUuid(mUUIDService));
+		scanFilters.add(builder.build());
+
+		return scanFilters;
+	}
+
+	private ScanSettings buildScanSettings() {
+		ScanSettings.Builder builder = new ScanSettings.Builder();
+		builder.setScanMode(ScanSettings.SCAN_MODE_LOW_POWER);
+		return builder.build();
 	}
 
 	// スキャンの停止

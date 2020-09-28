@@ -393,6 +393,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if( mButton_StartScan.getId() == v.getId() )//スキャン開始
         {
             Intent devicelistactivityIntent = new Intent( this, DeviceListActivity.class );
+            devicelistactivityIntent.putExtra("UUID_SERVICE", UUID_SERVICE_PRIVATE);
             startActivityForResult( devicelistactivityIntent, REQUEST_CONNECTDEVICE );
             return;
         }
