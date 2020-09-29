@@ -27,6 +27,8 @@
     <string name="npstr_temptime">基準温度\n更新時間</string>
     <string name="npstr_hightemp">高温閾値</string>
     <string name="npstr_calibration">温度誤差</string>
+    <string name="npstr_do">[℃]</string>
+    <string name="npstr_min">[min]</string>
 
 
 </resources>

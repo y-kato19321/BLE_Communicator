@@ -141,7 +141,15 @@
                 android:layout_gravity="center"
                 android:layout_marginTop="10dp"
                 android:text="@string/npstr_calibration"
-                android:textSize="20sp" />
+                android:textSize="18sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="0dp"
+                android:text="@string/npstr_do"
+                android:textSize="18dp" />
 
         </LinearLayout>
 
@@ -163,7 +171,15 @@
                 android:layout_gravity="center"
                 android:layout_marginTop="10dp"
                 android:text="@string/npstr_hightemp"
-                android:textSize="20dp" />
+                android:textSize="18dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="0dp"
+                android:text="@string/npstr_do"
+                android:textSize="18dp" />
 
         </LinearLayout>
 
@@ -185,7 +201,15 @@
                 android:layout_gravity="center"
                 android:layout_marginTop="10dp"
                 android:text="@string/npstr_temptime"
-                android:textSize="20dp" />
+                android:textSize="18dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="0dp"
+                android:text="@string/npstr_min"
+                android:textSize="18dp" />
 
         </LinearLayout>
 
