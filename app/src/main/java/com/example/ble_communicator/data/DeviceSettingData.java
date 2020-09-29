@@ -43,10 +43,10 @@ public class DeviceSettingData {
     // 範囲を超えた値が来たら、範囲内の値に丸め込む
     public void setByteDataList(byte[] array)
     {
-        calibration = (double)(array[1] / 10);
+        calibration = ((double)array[1] / 10);
         if (calibration < CALIBRATION_MIN) {
             calibration = CALIBRATION_MIN;
-        } else if (6.0 < CALIBRATION_MAX) {
+        } else if (CALIBRATION_MAX < calibration) {
             calibration = CALIBRATION_MAX;
         }
 
