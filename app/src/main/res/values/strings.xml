@@ -17,6 +17,9 @@
     <string name="disconnect">切断</string>
     <string name="readData">設定受信</string>
     <string name="writeData">設定送信</string>
+    <string name="poweroff">システム終了</string>
+    <string name="settingdisplay">設定表示</string>
+
 
     <!-- DeviceListActivity トースト用 -->
     <string name="unknown_device">Unknown device</string>
@@ -24,11 +27,13 @@
     <!-- DeviceListActivity メニュー用 -->
     <string name="scan">Scan</string>
     <string name="stop">Stop</string>
-    <string name="npstr_temptime">基準温度\n更新時間</string>
-    <string name="npstr_hightemp">高温閾値</string>
-    <string name="npstr_calibration">温度誤差</string>
-    <string name="npstr_do">[℃]</string>
-    <string name="npstr_min">[min]</string>
+    <string name="updatetime">基準温度更新時間[min]</string>
+    <string name="thresholddegree">高温閾値[℃]</string>
+    <string name="offsettemp">温度誤差[℃]</string>
 
-
+    <!-- システム終了ダイアログ -->
+    <string name="systemoff_title">システム終了</string>
+    <string name="systemoff_message">システムを終了しますか？</string>
+    <string name="systemoff_yes">はい</string>
+    <string name="systemoff_cancel">いいえ</string>
 </resources>
