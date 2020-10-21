@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
@@ -16,6 +17,7 @@ import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -23,8 +25,12 @@ import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.NumberPicker;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -39,11 +45,31 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     //ViewModel
     private MainActivityViewModel viewmodel = null;
     //温度誤差
-    private NumberPicker npcalibration = null;
+    private Spinner spinner_offsetTemp = null;
+
     //高温閾値
-    private NumberPicker nphightemperaturethreshold = null;
+    private Spinner spinner_thresholdDegree = null;
+
     //基準温度更新時間
-    private NumberPicker npreferencetemperatureupdatetime = null;
+    private Spinner spinner_updateTime = null;
+
+    //private RadioGroup radiogroup_logMode = null;
+    //private RadioButton radiobutton_logModeHide = null;
+    //private RadioButton radiobutton_logModeOpen = null;
+
+//    private RadioGroup radiogroup_detecMode = null;
+//    private RadioButton radiobutton_detecModeArm = null;
+//    private RadioButton radiobutton_detecModeFace1 = null;
+//    private RadioButton radiobutton_detecModeFace2 = null;
+    private Spinner spinner_detecMode = null;
+
+    private RadioGroup radiogroup_temperatureUnit = null;
+    private RadioButton radiobutton_temperatureUnitCelsius = null;
+    private RadioButton radiobutton_temperatureUnitFahrenheit = null;
+
+    private RadioGroup radiogroup_thermographyMode = null;
+    private RadioButton radiobutton_thermographyModeHide = null;
+    private RadioButton radiobutton_thermographyModeOpen = null;
 
     // 定数（Bluetooth LE Gatt UUID）
     // Private Service
@@ -64,8 +90,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button mButton_StartScan;    //スキャン開始ボタン
     private Button mButton_Connect;         // 接続ボタン
     private Button mButton_Disconnect;      // 切断ボタン
+    private Button mButton_Poweroff;        // システム終了
     private Button mButton_ReadData;        // キャラクタリスティック1の読み込みボタン
     private Button mButton_WriteData;       // キャラクタリスティック2への書き込みボタン
+    private Button mButton_DisplayLog;      // ログ表示(非表示ボタン)
+
+    private Boolean mIsDisplayLog = false;  // ログ表示画面 true:表示、false:非表示
+
+    // データ識別
+    private final byte DATAID_SETTING = 0;
+    private final byte DATAID_SYSTEM_END = 2;
+    private final byte DATAID_LOG = 3;
+
 
     // BluetoothGattコールバックオブジェクト
     private final BluetoothGattCallback mGattcallback = new BluetoothGattCallback()
@@ -89,6 +125,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         // GUIアイテムの有効無効の設定
                         // 切断ボタンを有効にする
                         mButton_Disconnect.setEnabled( true );
+
                     }
                 } );
                 return;
@@ -136,10 +173,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         public void run()
                         {
                             // GUIアイテムの有効無効の設定
+                            mButton_Poweroff.setEnabled(true );
                             mButton_ReadData.setEnabled( true );
-                            //mButton_ReadChara2.setEnabled( true );
-                            mButton_WriteData.setEnabled( true );
-                            //mButton_WriteWorld.setEnabled( true );
+                            mButton_DisplayLog.setEnabled( true );
                         }
                     } );
                     continue;
@@ -170,8 +206,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 {
                     public void run()
                     {
-                        //受信に成功後、NumberPickerをEnableにする
+
+                        mButton_WriteData.setEnabled(true);
+                        //受信に成功後、Enableにする
                         setEnableNP(true);
+                        dispConnectionResult(connectRecieve, true);
                     }
                 } );
                 return;
@@ -189,15 +228,58 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             // キャラクタリスティックごとに個別の処理
             if( UUID_CHARACTERISTIC_PRIVATE1.equals( characteristic.getUuid() ) )
             {    // キャラクタリスティック２：データサイズは、8バイト（文字列を想定。半角文字8文字）
-                runOnUiThread( new Runnable()
+
+                byte[] byteDataList = characteristic.getValue();
+                if(byteDataList[0] == DATAID_SETTING)
                 {
-                    public void run()
+                    runOnUiThread( new Runnable()
                     {
-                        // GUIアイテムの有効無効の設定
-                        // 書き込みボタンを有効にする
-                        mButton_WriteData.setEnabled( true );
+                        public void run()
+                        {
+                            // GUIアイテムの有効無効の設定
+                            mButton_StartScan.setEnabled( true );
+                            mButton_Disconnect.setEnabled( true );
+                            mButton_Poweroff.setEnabled( true );
+                            mButton_ReadData.setEnabled( true );
+                            mButton_DisplayLog.setEnabled( true );
+                            setEnableNP(false);
+                        }
+                    } );
+                }
+                else if(byteDataList[0] == DATAID_LOG)
+                {
+                    // ログ画面表示
+                    if(mIsDisplayLog)
+                    {
+                        runOnUiThread( new Runnable()
+                        {
+                            public void run()
+                            {
+                                // GUIアイテムの有効無効の設定
+                                mButton_DisplayLog.setEnabled( true );
+                                setEnableNP(false);
+                            }
+                        } );
                     }
-                } );
+                    else
+                    {
+                        runOnUiThread( new Runnable()
+                        {
+                            public void run()
+                            {
+                                // GUIアイテムの有効無効の設定
+                                mButton_StartScan.setEnabled( true );
+                                mButton_Disconnect.setEnabled( true );
+                                mButton_Poweroff.setEnabled( true );
+                                mButton_ReadData.setEnabled( true );
+                                mButton_DisplayLog.setEnabled( true );
+                                setEnableNP(false);
+                            }
+                        } );
+                    }
+                }
+
+
                 return;
             }
         }
@@ -214,7 +296,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         viewmodel = new ViewModelProvider(this).get(MainActivityViewModel.class);
 
         //画面上のコントロールの初期設定
-        initNPControls();
+        initControls();
 
         // Livedata受け取りをUIに反映
         final Observer<DeviceSettingData> settingObserver = new Observer<DeviceSettingData>() {
@@ -235,10 +317,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mButton_Connect.setOnClickListener( this );
         mButton_Disconnect = (Button)findViewById( R.id.button_disconnect );
         mButton_Disconnect.setOnClickListener( this );
-        mButton_ReadData = (Button)findViewById( R.id.button_readchara1 );
+        mButton_Poweroff = (Button)findViewById( R.id.button_poweroff );
+        mButton_Poweroff.setOnClickListener( this );
+        mButton_ReadData = (Button)findViewById( R.id.button_receive_settings );
         mButton_ReadData.setOnClickListener( this );
-        mButton_WriteData = (Button)findViewById( R.id.button_writehello );
+        mButton_WriteData = (Button)findViewById( R.id.button_send_settings );
         mButton_WriteData.setOnClickListener( this );
+        mButton_DisplayLog =(Button)findViewById(R.id.button_display_log);
+        mButton_DisplayLog.setOnClickListener( this );
 
         //ACCESS_FINE_LOCATIONの許可取得
         if(ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION ) != PackageManager.PERMISSION_GRANTED) {
@@ -277,10 +363,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // GUIアイテムの有効無効の設定
         mButton_Connect.setEnabled( false );
         mButton_Disconnect.setEnabled( false );
+        mButton_Poweroff.setEnabled( false );
         mButton_ReadData.setEnabled( false );
-        //mButton_ReadChara2.setEnabled( false );
         mButton_WriteData.setEnabled( false );
-        //mButton_WriteWorld.setEnabled( false );
+        mButton_DisplayLog.setEnabled( false );
 
         // デバイスアドレスが空でなければ、接続ボタンを有効にする。
         if( !mDeviceAddress.equals( "" ) )
@@ -349,6 +435,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     // デバイスリストアクティビティからの情報の取得
                     strDeviceName = data.getStringExtra( DeviceListActivity.EXTRAS_DEVICE_NAME );
                     mDeviceAddress = data.getStringExtra( DeviceListActivity.EXTRAS_DEVICE_ADDRESS );
+                    strDeviceName = strDeviceName +"(" + mDeviceAddress + ")";
                 }
                 else
                 {
@@ -356,8 +443,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     mDeviceAddress = "";
                 }
                 ( (TextView)findViewById( R.id.textview_devicename ) ).setText( strDeviceName );
-                ( (TextView)findViewById( R.id.textview_deviceaddress ) ).setText( mDeviceAddress );
-                ( (TextView)findViewById( R.id.textview_readchara1 ) ).setText( "" );
+                //( (TextView)findViewById( R.id.textview_deviceaddress ) ).setText( mDeviceAddress );
+                //( (TextView)findViewById( R.id.textview_readchara1 ) ).setText( "" );
                 break;
         }
         super.onActivityResult( requestCode, resultCode, data );
@@ -400,32 +487,119 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if( mButton_Connect.getId() == v.getId() )
         {
             connect();            // 接続
+            //ボタンの有効無効設定
+            mButton_Connect.setEnabled( false );
+            mButton_StartScan.setEnabled( true );
+
             return;
         }
         if( mButton_Disconnect.getId() == v.getId() )
         {
             mButton_Disconnect.setEnabled( false );    // 切断ボタンの無効化（連打対策）
             disconnect();            // 切断
+
+            mButton_StartScan.setEnabled( true );
+            mButton_Poweroff.setEnabled( false );
+            mButton_ReadData.setEnabled( false );
+            mButton_WriteData.setEnabled( false );
+            mButton_DisplayLog.setEnabled( false );
+
+            //コネクト状態 + 受信後の場合のみ、ユーザはNumberPickerから設定可能とする
+            setEnableNP(false);
+
+            return;
+        }
+        if( mButton_Poweroff.getId() == v.getId() )
+        {
+            // ダイアログ表示
+            new AlertDialog.Builder(this)
+                    .setTitle(R.string.systemoff_title)
+                    .setMessage(R.string.systemoff_message)
+                    .setPositiveButton(R.string.systemoff_yes, mSystemOffClickListener)
+                    .setNegativeButton(R.string.systemoff_cancel, null)
+                    .show();
             return;
         }
         if( mButton_ReadData.getId() == v.getId() )
         {
+            mButton_ReadData.setEnabled( false );
+
+            mButton_StartScan.setEnabled( false );
+            mButton_Connect.setEnabled( false );
+            mButton_Disconnect.setEnabled( false );
+            mButton_Poweroff.setEnabled(false);
+            mButton_DisplayLog.setEnabled( false );
+
             readCharacteristic( UUID_SERVICE_PRIVATE, UUID_CHARACTERISTIC_PRIVATE1 );
             return;
         }
         if( mButton_WriteData.getId() == v.getId() )
         {
             mButton_WriteData.setEnabled( false );    // 書き込みボタンの無効化（連打対策）
-            //mButton_WriteWorld.setEnabled( false );    // 書き込みボタンの無効化（連打対策）
+
 
             //現在の設定値を取得
             DeviceSettingData setData = viewmodel.getDeviceSettingData();
             byte[] dataList = setData.createByteDataList();
+            dataList[0] = DATAID_SETTING;
+
+            // FW用のテストコード
+            //dataList[1] = 61;   dataList[2] = 106;  dataList[3] = 61; dataList[4] = 2;
+            //dataList[5] = 3;    dataList[6] = 2; dataList[7] = 2;
 
             writeCharacteristic( UUID_SERVICE_PRIVATE, UUID_CHARACTERISTIC_PRIVATE1, dataList );
             return;
         }
+        if( mButton_DisplayLog.getId() == v.getId())
+        {
+            if(mIsDisplayLog == false)
+            {
+                mIsDisplayLog = true;
+                mButton_DisplayLog.setEnabled(false);
+
+                mButton_StartScan.setEnabled(false);
+                mButton_Connect.setEnabled(false);
+                mButton_Disconnect.setEnabled(false);
+                mButton_Poweroff.setEnabled(false);
+                mButton_ReadData.setEnabled(false);
+                mButton_WriteData.setEnabled(false);
+            } else {
+                mIsDisplayLog = false;
+            }
+
+            // mButton_DisplayLog.setEnabled( false );    // 書き込みボタンの無効化（連打対策）
+            // バイトデータを送る場合は、配列を使用しなくてはいけないので 2 byte として送る
+            byte[] dataList = new byte[2];
+            dataList[0] = DATAID_LOG; //ログ表示(非表示)を意味する
+
+            writeCharacteristic( UUID_SERVICE_PRIVATE, UUID_CHARACTERISTIC_PRIVATE1, dataList );
+
+        }
     }
+
+    // システム終了の処理
+    private DialogInterface.OnClickListener mSystemOffClickListener = new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+            mButton_Poweroff.setEnabled(false);
+            // バイトデータを送る場合は、配列を使用しなくてはいけないので 2 byte として送る
+            byte[] dataList = new byte[2];
+            dataList[0] = DATAID_SYSTEM_END; //終了を意味する
+
+            writeCharacteristic(UUID_SERVICE_PRIVATE, UUID_CHARACTERISTIC_PRIVATE1, dataList);
+
+            mButton_StartScan.setEnabled(true);
+            mButton_Connect.setEnabled(false);
+            mButton_Disconnect.setEnabled(false);
+            mButton_ReadData.setEnabled(false);
+            mButton_WriteData.setEnabled(false);
+            mButton_DisplayLog.setEnabled(false);
+
+            mDeviceAddress = "";
+            ( (TextView)findViewById( R.id.textview_devicename ) ).setText("");
+        }
+    };
+
 
     // 接続
     private void connect()
@@ -443,10 +617,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // 接続
         BluetoothDevice device = mBluetoothAdapter.getRemoteDevice( mDeviceAddress );
         mBluetoothGatt = device.connectGatt( this, false, mGattcallback );
-
-        //ボタンの有効無効設定
-        mButton_Connect.setEnabled( false );
-        mButton_Disconnect.setEnabled( true );
     }
 
     // 切断
@@ -472,14 +642,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         {
             mButton_Connect.setEnabled( true );
         }
-        mButton_Disconnect.setEnabled( false );
-        mButton_ReadData.setEnabled( false );
-        //mButton_ReadChara2.setEnabled( false );
-        mButton_WriteData.setEnabled( false );
-        //mButton_WriteWorld.setEnabled( false );
-
-        //コネクト状態 + 受信後の場合のみ、ユーザはNumberPickerから設定可能とする
-        setEnableNP(false);
     }
 
     // キャラクタリスティックの読み込み
@@ -493,18 +655,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         boolean res = mBluetoothGatt.readCharacteristic( blechar );
 
         //結果を表示
-        dispConnectionResult(connectRecieve, res);
+        //dispConnectionResult(connectRecieve, res);
 
-/*        //受信したデータから設定値を取得
-        if (res) {
-            DeviceSettingData setdata = new DeviceSettingData();
-            if (setdata != null) {
-                //受信に成功後、NumberPickerはEnableとなりユーザ設定を許可する
-                setEnableNP(true);
-                viewmodel.setDeviceSettingData(setdata);
-            }
-        }
- */
     }
 
     // キャラクタリスティックの書き込み
@@ -526,87 +678,324 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     /**
      * NumberPickerコントロールの初期設定を行る
      */
-    private void initNPControls() {
+    private void initControls() {
 
         //温度誤差
-        if (npcalibration == null) {
-            npcalibration = (NumberPicker) findViewById(R.id.np_calibration);
+        if(spinner_offsetTemp == null) {
+            spinner_offsetTemp = (Spinner) findViewById(R.id.spinner_offsettemp);
         }
-        npcalibration.setMaxValue(viewmodel.getCalibralinNPMaxvalue());
-        npcalibration.setMinValue(0);
-        npcalibration.setDisplayedValues(viewmodel.getCalibrationListContents());
-        npcalibration.setWrapSelectorWheel(false);
-        npcalibration.setDescendantFocusability(NumberPicker.FOCUS_BLOCK_DESCENDANTS);
-        npcalibration.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
-            @Override
-            public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
-                viewmodel.onCalibrationChange(oldVal, newVal);
-            }
-        });
+        spinner_offsetTemp.setAdapter(setAdapter(viewmodel.getOffsetTempList()));
+        spinner_offsetTemp.setOnItemSelectedListener(mItemSelectedListener);
 
         //高温閾値範囲設定
-        if (nphightemperaturethreshold == null) {
-            nphightemperaturethreshold = (NumberPicker) findViewById(R.id.np_hightemperaturethreshold);
+
+        if(spinner_thresholdDegree == null) {
+            spinner_thresholdDegree = (Spinner) findViewById(R.id.spinner_thresholddegree);
         }
-        nphightemperaturethreshold.setMaxValue(viewmodel.getHighTemperatureThresholdMaxvalue());
-        nphightemperaturethreshold.setMinValue(0);
-        nphightemperaturethreshold.setDisplayedValues(viewmodel.getHighTemperatureThresholdListContents());
-        nphightemperaturethreshold.setWrapSelectorWheel(false);
-        nphightemperaturethreshold.setDescendantFocusability(NumberPicker.FOCUS_BLOCK_DESCENDANTS);
-        nphightemperaturethreshold.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
-            @Override
-            public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
-                viewmodel.onHighTemperatureThresholdChange(oldVal, newVal);
-            }
-        });
+        spinner_thresholdDegree.setAdapter((setAdapter(viewmodel.getThresholddegreeList())));
+        spinner_thresholdDegree.setOnItemSelectedListener(mItemSelectedListener);
+
 
         //基準温度更新時間
-        if (npreferencetemperatureupdatetime == null) {
-            npreferencetemperatureupdatetime = (NumberPicker) findViewById(R.id.np_referencetemperatureupdatetime);
+        if(spinner_updateTime == null) {
+            spinner_updateTime = (Spinner) findViewById(R.id.spinner_updatetime);
         }
-        npreferencetemperatureupdatetime.setMaxValue(viewmodel.getReferenceTemperatureUpdatetimeMaxvalue());
-        npreferencetemperatureupdatetime.setMinValue(0);
-        npreferencetemperatureupdatetime.setDisplayedValues(viewmodel.getReferenceTemperatureUpdatetimeListContents());
-        npreferencetemperatureupdatetime.setWrapSelectorWheel(false);
-        npreferencetemperatureupdatetime.setDescendantFocusability(NumberPicker.FOCUS_BLOCK_DESCENDANTS);
-        npreferencetemperatureupdatetime.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
-            @Override
-            public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
-                viewmodel.onReferenceUDTimeChange(oldVal, newVal);
-            }
-        });
+        spinner_updateTime.setAdapter((setAdapter(viewmodel.getUpdateTimeList())));
+        spinner_updateTime.setOnItemSelectedListener(mItemSelectedListener);
+
+
+        //////////
+        //if(radiogroup_logMode == null){
+        //    radiogroup_logMode = (RadioGroup)findViewById(R.id.radiogroup_logmode);
+        //}
+
+        //if(radiobutton_logModeHide == null){
+        //    radiobutton_logModeHide = (RadioButton)findViewById(R.id.radiobutton_logmode_hide);
+        //}
+        //radiobutton_logModeHide.setOnClickListener(radioLogModeListener);
+
+        //if(radiobutton_logModeOpen == null){
+        //    radiobutton_logModeOpen = (RadioButton)findViewById(R.id.radiobutton_logmode_open);
+        //}
+        //radiobutton_logModeOpen.setOnClickListener(radioLogModeListener);
+
+        //////////
+/*        if(radiogroup_detecMode == null){
+            radiogroup_detecMode = (RadioGroup)findViewById(R.id.radiogroup_detecmode);
+        }
+
+        if(radiobutton_detecModeArm == null){
+            radiobutton_detecModeArm = (RadioButton)findViewById(R.id.radiobutton_detecmode_arm);
+        }
+        radiobutton_detecModeArm.setOnClickListener(radioDetecModeListener);
+
+        if(radiobutton_detecModeFace1 == null){
+            radiobutton_detecModeFace1 = (RadioButton)findViewById(R.id.radiobutton_detecmode_face1);
+        }
+        radiobutton_detecModeFace1.setOnClickListener(radioDetecModeListener);
+
+        if(radiobutton_detecModeFace2 == null){
+            radiobutton_detecModeFace2 = (RadioButton)findViewById(R.id.radiobutton_detecmode_face2);
+        }
+        radiobutton_detecModeFace2.setOnClickListener(radioDetecModeListener);
+*/
+        if(spinner_detecMode == null) {
+            spinner_detecMode = (Spinner) findViewById(R.id.spinner_detecmode);
+        }
+        spinner_detecMode.setAdapter((setAdapter(viewmodel.getDetecModeList())));
+        spinner_detecMode.setOnItemSelectedListener(mItemSelectedListener);
+
+        //////////
+        if(radiogroup_temperatureUnit == null){
+            radiogroup_temperatureUnit = (RadioGroup)findViewById(R.id.radiogroup_temperature_unit);
+        }
+
+        if(radiobutton_temperatureUnitCelsius == null){
+            radiobutton_temperatureUnitCelsius = (RadioButton)findViewById(R.id.radiobutton_temperature_unit_celsius);
+        }
+        radiobutton_temperatureUnitCelsius.setOnClickListener(radioTemperatureUnitListener);
+
+        if(radiobutton_temperatureUnitFahrenheit == null){
+            radiobutton_temperatureUnitFahrenheit = (RadioButton)findViewById(R.id.radiobutton_temperature_unit_fahrenheit);
+        }
+        radiobutton_temperatureUnitFahrenheit.setOnClickListener(radioTemperatureUnitListener);
+
+        //////////
+        if(radiogroup_thermographyMode == null){
+            radiogroup_thermographyMode = (RadioGroup)findViewById(R.id.radiogroup_thermographymode);
+        }
+
+        if(radiobutton_thermographyModeHide == null){
+            radiobutton_thermographyModeHide = (RadioButton)findViewById(R.id.radiobutton_thermographymode_hide);
+        }
+        radiobutton_thermographyModeHide.setOnClickListener(radiogroupThermographyModeListener);
+
+        if(radiobutton_thermographyModeOpen == null){
+            radiobutton_thermographyModeOpen = (RadioButton)findViewById(R.id.radiobutton_thermographymode_open);
+        }
+        radiobutton_thermographyModeOpen.setOnClickListener(radiogroupThermographyModeListener);
 
         setEnableNP(false);
     }
+
+    private ArrayAdapter setAdapter(String[] spinnerItemArray ){
+        // とりあえず、adapterの中身はなしでインスタンスを生成
+        ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_spinner_item);
+        // 自分でspinnerの中身の配列を定義しています。
+        // adapterに中身をセット
+        for(String targetStr : spinnerItemArray) {
+            adapter.add(targetStr);
+        }
+
+        return adapter;
+    }
+
+    private AdapterView.OnItemSelectedListener mItemSelectedListener = new AdapterView.OnItemSelectedListener() {
+        @Override
+        public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+            Spinner spinner = (Spinner) adapterView;
+            int nview = spinner.getSelectedItemPosition();
+
+            if(spinner == spinner_offsetTemp)
+            {
+                viewmodel.onOffsetTempSelectedListener(nview);
+            }
+            else if(spinner == spinner_thresholdDegree)
+            {
+                viewmodel.onThresholddegreeSelectedListener(nview);
+            }
+            else if(spinner == spinner_updateTime)
+            {
+                viewmodel.onUpdateTimeSelectedListener(nview);
+            }
+            else if(spinner == spinner_detecMode)
+            {
+                viewmodel.onDetecModeSelectedListener(nview);
+            }
+        }
+
+        @Override
+        public void onNothingSelected(AdapterView<?> adapterView) {
+            return;
+        }
+    };
+
 
     /**
      * NumberPickerコントロールのEnable/Disable設定
      * @param enable
      */
     void setEnableNP(boolean enable) {
-        if (npcalibration != null && nphightemperaturethreshold != null && npreferencetemperatureupdatetime != null ) {
-            npcalibration.setEnabled(enable);
-            nphightemperaturethreshold.setEnabled(enable);
-            npreferencetemperatureupdatetime.setEnabled(enable);
+
+        if(spinner_offsetTemp != null) {
+            spinner_offsetTemp.setEnabled(enable);
         }
+
+        if(spinner_thresholdDegree != null) {
+            spinner_thresholdDegree.setEnabled(enable);
+        }
+
+        if (spinner_updateTime != null ) {
+            spinner_updateTime.setEnabled(enable);
+        }
+
+        //if(radiobutton_logModeHide != null){
+        //    radiobutton_logModeHide.setEnabled(enable);
+        //}
+
+        //if(radiobutton_logModeOpen != null){
+        //    radiobutton_logModeOpen.setEnabled(enable);
+        //}
+
+
+        if(spinner_detecMode != null){
+            spinner_detecMode.setEnabled(enable);
+        }
+/*        if(radiobutton_detecModeArm != null){
+            radiobutton_detecModeArm.setEnabled(enable);
+        }
+
+        if(radiobutton_detecModeFace1 != null){
+            radiobutton_detecModeFace1.setEnabled(enable);
+        }
+
+        if(radiobutton_detecModeFace2 != null){
+            radiobutton_detecModeFace2.setEnabled(enable);
+        }
+*/
+        if(radiobutton_temperatureUnitCelsius != null){
+            radiobutton_temperatureUnitCelsius.setEnabled(enable);
+        }
+
+        if(radiobutton_temperatureUnitFahrenheit != null){
+            radiobutton_temperatureUnitFahrenheit.setEnabled(enable);
+        }
+
+        if(radiobutton_thermographyModeHide != null){
+            radiobutton_thermographyModeHide.setEnabled(enable);
+        }
+
+        if(radiobutton_thermographyModeOpen != null){
+            radiobutton_thermographyModeOpen.setEnabled(enable);
+        }
+
     }
 
     /**
      * 最新の設定を画面の各コントロールに表示する
      */
     private void dsipDeviceSetting(DeviceSettingData deviceSettingData) {
+        int id = 0;
 
-        if (npcalibration != null && nphightemperaturethreshold != null && npreferencetemperatureupdatetime != null ) {
-            //キャリブレーション
-            npcalibration.setValue(viewmodel.getCalibrationNPIndexOf());
 
-            //高温閾値
-            nphightemperaturethreshold.setValue(viewmodel.getHighTemperatureThresholdNPIndexOf());
-
-            //基準温度更新時間
-            npreferencetemperatureupdatetime.setValue(viewmodel.getReferenceTemperatureUpdatetimeNPIndexOf());
+        if(spinner_offsetTemp != null) {
+            spinner_offsetTemp.setSelection(viewmodel.getOffsetTempSpinnerIndex());
         }
+
+        if(spinner_thresholdDegree != null) {
+            spinner_thresholdDegree.setSelection(viewmodel.getThresholddegreeSpinnerIndex());
+        }
+
+        if(spinner_updateTime != null) {
+            spinner_updateTime.setSelection(viewmodel.getUpdateTimeSpinnerIndex());
+        }
+
+
+        //if(         (radiogroup_logMode != null)
+        //        &&  (radiobutton_logModeHide != null)
+        //        &&  (radiobutton_logModeOpen != null))
+        //{
+        //    id = viewmodel.getCheckedRadioLogId();
+        //    if (id != 0) {
+        //        radiogroup_logMode.check(id);
+        //    }
+        //}
+
+/*        if(         (radiogroup_detecMode != null)
+                &&  (radiobutton_detecModeArm != null)
+                &&  (radiobutton_detecModeFace1 != null)
+                &&  (radiobutton_detecModeFace2 != null))
+        {
+            id = viewmodel.getCheckedRadioDetecmodeId();
+            if(id != 0){
+                radiogroup_detecMode.check(id);
+            }
+        }
+ */
+
+        if(spinner_detecMode != null) {
+            spinner_detecMode.setSelection(viewmodel.getDetecModeSpinnerIndex());
+        }
+
+        if(         (radiogroup_temperatureUnit != null)
+                &&  (radiobutton_temperatureUnitCelsius != null)
+                &&  (radiobutton_temperatureUnitFahrenheit != null))
+        {
+            id = viewmodel.getCheckedRadioTemperatureUnit();
+            if(id != 0){
+                radiogroup_temperatureUnit.check(id);
+            }
+        }
+
+        if(         (radiogroup_thermographyMode != null)
+                &&  (radiobutton_thermographyModeHide != null)
+                &&  (radiobutton_thermographyModeOpen != null))
+        {
+            id = viewmodel.getCheckedRadioThermographyMode();
+            if(id != 0){
+                radiogroup_thermographyMode.check(id);
+            }
+
+        }
+
     }
+
+    //private View.OnClickListener radioLogModeListener = new View.OnClickListener() {
+    //    @Override
+    //    public void onClick(View v) {
+    //        if (radiogroup_logMode == null) {
+    //            return;
+    //        }
+    //        int selectedId = radiogroup_logMode.getCheckedRadioButtonId();
+    //        viewmodel.setOnClickLog(selectedId);
+    //    }
+    //};
+
+    /*
+    private View.OnClickListener radioDetecModeListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            if (radiogroup_detecMode == null) {
+                return;
+            }
+            int selectedId = radiogroup_detecMode.getCheckedRadioButtonId();
+            viewmodel.setOnClickDetecMode(selectedId);
+        }
+    };
+    */
+
+    private View.OnClickListener radioTemperatureUnitListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            if (radiogroup_temperatureUnit == null) {
+                return;
+            }
+            int selectedId = radiogroup_temperatureUnit.getCheckedRadioButtonId();
+            viewmodel.setOnClickTemperatureUnit(selectedId);
+        }
+    };
+
+    private View.OnClickListener radiogroupThermographyModeListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            if (radiogroup_thermographyMode == null) {
+                return;
+            }
+            int selectedId = radiogroup_thermographyMode.getCheckedRadioButtonId();
+            viewmodel.setOnClickThermographyMode(selectedId);
+        }
+    };
+
 
     /**
      * 通信結果を表示する

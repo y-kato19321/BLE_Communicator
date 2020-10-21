@@ -18,8 +18,7 @@ public class MainActivityViewModel extends ViewModel {
         return ldsettingdata.getValue();
     }
 
-    public void setDeviceSettingData(DeviceSettingData data)
-    {
+    public void setDeviceSettingData(DeviceSettingData data) {
         devicedata = data;
         ldsettingdata.postValue(devicedata);
     }
@@ -35,23 +34,13 @@ public class MainActivityViewModel extends ViewModel {
         ///////////////////////////////////////////////////////////////
         //メンバクラスのインスタンス作成
         devicedata = new DeviceSettingData();
-        if (devicedata == null) {
-            System.exit(0);
-        }
-
         npdata = new NumberPickerData();
-        if(npdata == null) {
-            System.exit(0);
-        }
-
         ldsettingdata = new MutableLiveData<DeviceSettingData>();
-        if(ldsettingdata == null) {
-            System.exit(0);
-        }
     }
 
     /**
      * BLEから受信したデータを翻訳し、メンバクラスに設定する
+     *
      * @param bledata
      */
     public void setDeviceSettingFromBLEData(BluetoothGattCharacteristic bledata) {
@@ -60,6 +49,7 @@ public class MainActivityViewModel extends ViewModel {
 
     /**
      * LiveDataによるデバイス設定情報を返す
+     *
      * @return
      */
     public MutableLiveData<DeviceSettingData> getDeviceSettingDataMutable() {
@@ -67,107 +57,145 @@ public class MainActivityViewModel extends ViewModel {
         return ldsettingdata;
     }
 
-    /**
-     * 温度誤差の設定可能数を返す
-     * @return 温度誤差の設定可能数
-     */
-    public int getCalibralinNPMaxvalue() {
-        return npdata.getCalibralinNPMaxvalue();
-    }
 
     /**
      * 温度誤差のリストを返す
+     *
      * @return 温度誤差のリスト
      */
-    public String[] getCalibrationListContents() {
-        return npdata.getCalibrationListContents();
+    public String[] getOffsetTempList() {
+        return npdata.getOffsetTempList();
     }
 
     /**
-     * 指定の値のキャリブレーションNumberPickerのインデックスを返す
-     * @return 　キャリブレーション値に対応するリストのインデックス
+     * 指定の値のインデックスを返す
+     *
+     * @return 　
      */
-    public int getCalibrationNPIndexOf() {
-        return npdata.getCalibrationNPIndexOf(devicedata.calibration);
+    public int getOffsetTempSpinnerIndex() {
+        return npdata.getOffsetTempSpinnerIndex(devicedata.offsetTemp);
     }
-
-    /**
-     * 高温閾値NumberPickerに設定する個数を返す
-     * @return リスト個数
-     */
-    public int getHighTemperatureThresholdMaxvalue() {
-        return npdata.getHighTemperatureThresholdMaxvalue();
-    }
-
-    /**
-     * 高温閾値NumberPickerに設定する文字列リストを返す
-     * @return 高温閾値リスト
-     */
-    public String[] getHighTemperatureThresholdListContents() {
-        return npdata.getHighTemperatureThresholdListContents();
-    }
-
-    /**
-     * 高温閾値NumberPickerのインデックスを返す
-     * @return 高温閾値
-     */
-    public int getHighTemperatureThresholdNPIndexOf() {
-        return npdata.getHighTemperatureThresholdNPIndexOf(devicedata.hightemperaturethreshold);
-    }
-
-    /**
-     * 基準温度更新時間NumberPickerに設定する個数を返す
-     * @return
-     */
-    public int getReferenceTemperatureUpdatetimeMaxvalue() {
-        return npdata.getReferenceTemperatureUpdatetimeMaxvalue();
-    }
-
-    /**
-     * 基準温度更新時間NNumberPickerに設定する文字列リストを返す
-     * @return 基準温度更新時間リスト
-     */
-    public String[] getReferenceTemperatureUpdatetimeListContents() {
-        return npdata.getReferenceTemperatureUpdatetimeListContents();
-    }
-
-    /**
-     * 高温閾値NumberPickerのインデックスを返す
-     * @return 高温閾値
-     */
-    public int getReferenceTemperatureUpdatetimeNPIndexOf() {
-        return npdata.getReferenceTemperatureUpdatetimeNPIndexOf(devicedata.referenceTemperatureUpdateTime);
-    }
-
 
     /**
      * 温度誤差値の変更時の処理
-     * @param oldv
+     *
      * @param newv 選択された値
      */
-    public void onCalibrationChange(int oldv, int newv) {
-        devicedata.calibration = npdata.getCalibrationIndexDoublenum(newv);
+    public void onOffsetTempSelectedListener(int newv) {
+        devicedata.offsetTemp = npdata.getOffsetValue(newv);
         ldsettingdata.postValue(devicedata);
+    }
+
+
+    /**
+     * 高温閾値に設定する文字列リストを返す
+     *
+     * @return 高温閾値リスト
+     */
+    public String[] getThresholddegreeList() {
+        return npdata.getThresholddegreeList();
+    }
+
+    /**
+     * 高温閾値のインデックスを返す
+     *
+     * @return 高温閾値
+     */
+    public int getThresholddegreeSpinnerIndex() {
+        return npdata.getThresholddegreeSpinnerIndex(devicedata.thresholdDegree);
     }
 
     /**
      * 高温閾値の変更時の処理
-     * @param oldv
+     *
      * @param newv 選択された値
      */
-    public void onHighTemperatureThresholdChange(int oldv, int newv) {
-        devicedata.hightemperaturethreshold = npdata.getHighTemperatureThresholdNPIndexDoublenum(newv);
+    public void onThresholddegreeSelectedListener(int newv) {
+        devicedata.thresholdDegree = npdata.getThresholddegreeValue(newv);
         ldsettingdata.postValue(devicedata);
     }
 
     /**
+     * 基準温度更新時間に設定する文字列リストを返す
+     *
+     * @return 基準温度更新時間リスト
+     */
+    public String[] getUpdateTimeList() {
+        return npdata.getUpdateTimeList();
+    }
+
+    /**
+     * 基準温度更新時間のインデックスを返す
+     *
+     * @return 高温閾値
+     */
+    public int getUpdateTimeSpinnerIndex() {
+        return npdata.getUpdatetimeSpinnerIndex(devicedata.updateTime);
+    }
+
+    /**
      * 基準温度更新時間値の変更時の処理
-     * @param oldv
+     *
      * @param newv 選択された値
      */
-    public void onReferenceUDTimeChange(int oldv, int newv) {
-        devicedata.referenceTemperatureUpdateTime = npdata.getReferenceUDTimeChangeIntnum(newv);
+    public void  onUpdateTimeSelectedListener(int newv) {
+        devicedata.updateTime = npdata.getUpdateTimeValue(newv);
         ldsettingdata.postValue(devicedata);
     }
+
+
+    //public void setOnClickLog(int id) {
+    //    devicedata.mLogMode = npdata.getLogMode(id);
+    //    ldsettingdata.postValue(devicedata);
+    //}
+
+    //public int getCheckedRadioLogId() {
+    //    return npdata.getRadioLogId(devicedata.mLogMode);
+    //}
+
+    /*
+    public void setOnClickDetecMode(int id) {
+        devicedata.mTemperatureMode = npdata.getTemperatureMode(id);
+        ldsettingdata.postValue(devicedata);
+    }
+
+    public int getCheckedRadioDetecmodeId() {
+        return npdata.getRadioTemperatureModeId(devicedata.mTemperatureMode);
+    }
+*/
+
+
+    public String[] getDetecModeList() {
+        return npdata.getDetecModeList();
+    }
+
+    public int getDetecModeSpinnerIndex() {
+        return npdata.getDetecModeSpinnerIndex(devicedata.mTemperatureMode);
+    }
+
+    public void onDetecModeSelectedListener(int newv) {
+       devicedata.mTemperatureMode = npdata.getDetecModeValue(newv);
+        ldsettingdata.postValue(devicedata);
+    }
+
+
+    public void setOnClickTemperatureUnit(int id) {
+        devicedata.mTemperatureUnit = npdata.getTemperatureUnit(id);
+        ldsettingdata.postValue(devicedata);
+    }
+
+    public int getCheckedRadioTemperatureUnit() {
+        return npdata.getRadioTemperatureUnitId(devicedata.mTemperatureUnit);
+    }
+
+    public void setOnClickThermographyMode(int id) {
+        devicedata.mThermographyMode = npdata.getThermographyMode(id);
+        ldsettingdata.postValue(devicedata);
+    }
+
+    public int getCheckedRadioThermographyMode() {
+        return npdata.getRadioThermographyModeId(devicedata.mThermographyMode);
+    }
+
 
 }
