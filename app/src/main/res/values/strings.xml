@@ -18,7 +18,9 @@
     <string name="readData">設定受信</string>
     <string name="writeData">設定送信</string>
     <string name="poweroff">システム終了</string>
-    <string name="settingdisplay">設定表示</string>
+    <string name="display_log">ログ表示/非表示</string>
+    <string name="display_log_show">ログ表示</string>
+    <string name="display_log_hide">ログ非表示</string>
 
 
     <!-- DeviceListActivity トースト用 -->
@@ -36,4 +38,15 @@
     <string name="systemoff_message">システムを終了しますか？</string>
     <string name="systemoff_yes">はい</string>
     <string name="systemoff_cancel">いいえ</string>
+
+    <!-- トーストメッセージ -->
+    <string name="toast_connect">サーマルカメラと接続しました</string>
+    <string name="toast_system_off">システムを終了しました</string>
+    <string name="toast_setting_receive">サーマルカメラの設定を受信しました</string>
+    <string name="toast_setting_send">サーマルカメラに設定を送信しました</string>
+    <string name="toast_disp_show">タッチパネルにログを表示しました</string>
+    <string name="toast_disp_hide">タッチパネルのログを閉じました</string>
+
+
+
 </resources>

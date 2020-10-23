@@ -125,7 +125,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         // GUIアイテムの有効無効の設定
                         // 切断ボタンを有効にする
                         mButton_Disconnect.setEnabled( true );
-
                     }
                 } );
                 return;
@@ -167,7 +166,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
                 UUID uuid = service.getUuid();
                 if( UUID_SERVICE_PRIVATE.equals( service.getUuid() ) )
-                {    // プライベートサービス
+                {
+                    //dispMessage("サービスを開始します");
+                    // プライベートサービス
                     runOnUiThread( new Runnable()
                     {
                         public void run()
@@ -176,6 +177,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             mButton_Poweroff.setEnabled(true );
                             mButton_ReadData.setEnabled( true );
                             mButton_DisplayLog.setEnabled( true );
+                            dispMessage(getString(R.string.toast_connect));
                         }
                     } );
                     continue;
@@ -191,6 +193,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             {
                 return;
             }
+
+            // メッセージを表示
+            // キャラクタリスティックごとにメッセージを表示したい時は、修正が必要。
+
             // キャラクタリスティックごとに個別の処理
             if( UUID_CHARACTERISTIC_PRIVATE1.equals( characteristic.getUuid() ) )
             {    // キャラクタリスティック１：データサイズは、2バイト（数値を想定。0～65,535）
@@ -210,7 +216,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         mButton_WriteData.setEnabled(true);
                         //受信に成功後、Enableにする
                         setEnableNP(true);
-                        dispConnectionResult(connectRecieve, true);
+                        dispMessage(getString(R.string.toast_setting_receive));
                     }
                 } );
                 return;
@@ -225,6 +231,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             {
                 return;
             }
+
+
             // キャラクタリスティックごとに個別の処理
             if( UUID_CHARACTERISTIC_PRIVATE1.equals( characteristic.getUuid() ) )
             {    // キャラクタリスティック２：データサイズは、8バイト（文字列を想定。半角文字8文字）
@@ -243,6 +251,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             mButton_ReadData.setEnabled( true );
                             mButton_DisplayLog.setEnabled( true );
                             setEnableNP(false);
+                            dispMessage(getString(R.string.toast_setting_send));
+                        }
+                    } );
+                }
+                else if(byteDataList[0] == DATAID_SYSTEM_END) {
+                    runOnUiThread( new Runnable()
+                    {
+                        public void run()
+                        {
+                            dispMessage(getString(R.string.toast_system_off));
                         }
                     } );
                 }
@@ -257,7 +275,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             {
                                 // GUIアイテムの有効無効の設定
                                 mButton_DisplayLog.setEnabled( true );
+                                //mButton_DisplayLog.setText(getString(R.string.display_log_hide));
                                 setEnableNP(false);
+                                dispMessage(getString(R.string.toast_disp_show));
                             }
                         } );
                     }
@@ -273,7 +293,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 mButton_Poweroff.setEnabled( true );
                                 mButton_ReadData.setEnabled( true );
                                 mButton_DisplayLog.setEnabled( true );
+                                //mButton_DisplayLog.setText(getString(R.string.display_log_hide));
                                 setEnableNP(false);
+                                dispMessage(getString(R.string.toast_disp_hide));
                             }
                         } );
                     }
@@ -498,6 +520,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             mButton_Disconnect.setEnabled( false );    // 切断ボタンの無効化（連打対策）
             disconnect();            // 切断
 
+
+
             mButton_StartScan.setEnabled( true );
             mButton_Poweroff.setEnabled( false );
             mButton_ReadData.setEnabled( false );
@@ -670,9 +694,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         BluetoothGattCharacteristic blechar = mBluetoothGatt.getService( uuid_service ).getCharacteristic( uuid_characteristic );
         blechar.setValue( dataList );
         boolean res = mBluetoothGatt.writeCharacteristic( blechar );
-
-        //結果を表示
-        dispConnectionResult(connectSend, true);
     }
 
     /**
@@ -997,36 +1018,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     };
 
 
-    /**
-     * 通信結果を表示する
-     * @param sendorrecv
-     * @param result
-     */
-    private static final int connectSend = 0;
-    private static final int connectRecieve = 1;
-    private void dispConnectionResult(int sendorrecv, boolean result) {
-        String message = "";
-
-        switch(sendorrecv) {
-            case connectSend: {
-                if (result) {
-                    message = "送信しました";
-                }
-                else {
-                    message = "送信に失敗しました";
-                }
-            }
-            break;
-            case connectRecieve: {
-                if (result) {
-                    message = "受信しました";
-                }
-                else {
-                    message = "受信に失敗しました";
-                }
-            }
-        }
-
+    private void dispMessage(String message) {
         Toast toast = Toast.makeText(this, message, Toast.LENGTH_LONG);
         // 位置調整
         toast.setGravity(Gravity.CENTER, 0, 0);

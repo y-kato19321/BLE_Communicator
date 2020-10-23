@@ -16,8 +16,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/startscan"
-            android:textSize="18sp"/>
-        <!--android:drawableLeft="@mipmap/ic_launcher_round"-->
+            android:drawableLeft="@drawable/scan16"
+            android:drawablePadding="5dp"
+            android:textSize="15dp"/>
 
     </LinearLayout>
 
@@ -44,17 +45,18 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/device_name"
-            android:textSize="18sp"/>
+            android:gravity="center_vertical"
+            android:textSize="15dp"/>
 
         <Space
-            android:layout_width="5dp"
+            android:layout_width="3dp"
             android:layout_height="wrap_content"/>
 
         <TextView
             android:id="@+id/textview_devicename"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="20sp"/>
+            android:textSize="15dp"/>
 
     </LinearLayout>
 
@@ -69,10 +71,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/connect"
-            android:textSize="18sp"/>
+            android:drawableLeft="@drawable/connect16"
+            android:drawablePadding="5dp"
+            android:textSize="15dp"/>
 
         <Space
-            android:layout_width="5dp"
+            android:layout_width="3dp"
             android:layout_height="wrap_content"/>
 
         <Button
@@ -80,10 +84,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/disconnect"
-            android:textSize="18sp"/>
+            android:drawableLeft="@drawable/disconnect16"
+            android:drawablePadding="5dp"
+            android:textSize="15dp"/>
 
         <Space
-            android:layout_width="50dp"
+            android:layout_width="3dp"
             android:layout_height="wrap_content"/>
 
         <Button
@@ -91,7 +97,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/poweroff"
-            android:textSize="18sp"/>
+            android:drawablePadding="5dp"
+            android:drawableLeft="@drawable/poweroff16"
+            android:textSize="15dp"/>
 
     </LinearLayout>
 
@@ -128,11 +136,8 @@
             android:layout_width="190dp"
             android:layout_height="wrap_content"
             android:text="@string/offsettemp"
-            android:textSize="18sp" />
+            android:textSize="15dp" />
 
-        <Space
-            android:layout_width="5dp"
-            android:layout_height="0dp"/>
         <Spinner
             android:id="@+id/spinner_offsettemp"
             android:layout_width="120dp"
@@ -151,11 +156,8 @@
             android:layout_width="190dp"
             android:layout_height="wrap_content"
             android:text="@string/thresholddegree"
-            android:textSize="18sp" />
+            android:textSize="15dp" />
 
-        <Space
-            android:layout_width="5dp"
-            android:layout_height="0dp"/>
         <Spinner
             android:id="@+id/spinner_thresholddegree"
             android:layout_width="120dp"
@@ -175,11 +177,8 @@
             android:layout_width="190dp"
             android:layout_height="wrap_content"
             android:text="@string/updatetime"
-            android:textSize="18sp" />
+            android:textSize="15dp" />
 
-        <Space
-            android:layout_width="5dp"
-            android:layout_height="0dp"/>
         <Spinner
             android:id="@+id/spinner_updatetime"
             android:layout_width="120dp"
@@ -198,10 +197,7 @@
             android:layout_width="190dp"
             android:layout_height="wrap_content"
             android:text="温度検出"
-            android:textSize="18sp" />
-        <Space
-            android:layout_width="5dp"
-            android:layout_height="0dp"/>
+            android:textSize="15dp" />
         <Spinner
             android:id="@+id/spinner_detecmode"
             android:layout_width="120dp"
@@ -245,7 +241,7 @@
             android:layout_height="match_parent"
             android:gravity="center_vertical"
             android:text="温度単位"
-            android:textSize="18sp" />
+            android:textSize="15dp" />
 
         <RadioGroup
             android:id="@+id/radiogroup_temperature_unit"
@@ -277,7 +273,7 @@
             android:layout_height="match_parent"
             android:gravity="center_vertical"
             android:text="サーモグラフィ"
-            android:textSize="18sp" />
+            android:textSize="15dp" />
 
         <RadioGroup
             android:id="@+id/radiogroup_thermographymode"
@@ -310,10 +306,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/readData"
-            android:textSize="18sp"/>
+            android:drawableLeft="@drawable/readdata16"
+            android:drawablePadding="5dp"
+            android:textSize="15dp"/>
 
         <Space
-            android:layout_width="5dp"
+            android:layout_width="3dp"
             android:layout_height="0dp"/>
 
         <Button
@@ -321,10 +319,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/writeData"
-            android:textSize="18sp"/>
+            android:drawableLeft="@drawable/writedata16"
+            android:drawablePadding="5dp"
+            android:textSize="15dp"/>
 
     </LinearLayout>
-
+5
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -348,10 +348,10 @@
             android:id="@+id/button_display_log"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="ログ表示"
-            android:textSize="18sp"/>
-
-
+            android:drawableLeft="@drawable/displog32"
+            android:drawablePadding="5dp"
+            android:text="@string/display_log"
+            android:textSize="15dp" />
     </LinearLayout>
 
 
