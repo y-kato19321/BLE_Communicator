@@ -41,11 +41,13 @@
 
     <!-- トーストメッセージ -->
     <string name="toast_connect">サーマルカメラと接続しました</string>
+    <string name="toast_disconnect">サーマルカメラと切断しました</string>
     <string name="toast_system_off">システムを終了しました</string>
     <string name="toast_setting_receive">サーマルカメラの設定を受信しました</string>
     <string name="toast_setting_send">サーマルカメラに設定を送信しました</string>
     <string name="toast_disp_show">タッチパネルにログを表示しました</string>
     <string name="toast_disp_hide">タッチパネルのログを閉じました</string>
+    <string name="toast_communicating_error">通信に不具合が生じました。\nデバイス検索からやり直してください。</string>
 
 
 
