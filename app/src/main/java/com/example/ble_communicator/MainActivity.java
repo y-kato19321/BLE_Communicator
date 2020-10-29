@@ -21,6 +21,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -97,11 +98,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private Boolean mIsDisplayLog = false;  // ログ表示画面 true:表示、false:非表示
 
+    private Handler mHandler;               // UIスレッド操作ハンドラ : 「一定時間後にスキャンをやめる処理」で必要
+    private boolean mCommunicating = false;      // スキャン中かどうかのフラグ
+    private static final int COMMUNICATE_PERIOD = 5000;    // 単位はミリ秒。
+
     // データ識別
     private final byte DATAID_SETTING = 0;
     private final byte DATAID_SYSTEM_END = 2;
     private final byte DATAID_LOG = 3;
-
 
     // BluetoothGattコールバックオブジェクト
     private final BluetoothGattCallback mGattcallback = new BluetoothGattCallback()
@@ -129,22 +133,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 } );
                 return;
             }
-            if( BluetoothProfile.STATE_DISCONNECTED == newState )
-            {    // 切断完了（接続可能範囲から外れて切断された）
-                // 接続可能範囲に入ったら自動接続するために、mBluetoothGatt.connect()を呼び出す。
-                mBluetoothGatt.connect();
-                runOnUiThread( new Runnable()
-                {
-                    public void run()
-                    {
-                        // GUIアイテムの有効無効の設定
-                        // 読み込みボタンを無効にする（通知チェックボックスはチェック状態を維持。通知ONで切断した場合、再接続時に通知は再開するので）
-                        mButton_ReadData.setEnabled( false );
-                        //mButton_ReadChara2.setEnabled( false );
-                    }
-                } );
-                return;
-            }
+            //if( BluetoothProfile.STATE_DISCONNECTED == newState )
+            //{    // 切断完了（接続可能範囲から外れて切断された）
+            //    // 接続可能範囲に入ったら自動接続するために、mBluetoothGatt.connect()を呼び出す。
+            //    mBluetoothGatt.connect();
+            //    dispMessage("接続可能範囲から外れて切断されました。\n自動接続処理を行います。");
+            //    mCommunicating = true;
+            //    runOnUiThread( new Runnable()
+            //    {
+            //        public void run()
+            //        {
+            //            // GUIアイテムの有効無効の設定
+            //            // 読み込みボタンを無効にする（通知チェックボックスはチェック状態を維持。通知ONで切断した場合、再接続時に通知は再開するので）
+            //            mButton_ReadData.setEnabled( false );
+            //            //mButton_ReadChara2.setEnabled( false );
+            //        }
+            //    } );
+            //    return;
+            //}
         }
 
         // サービス検索が完了したときの処理（mBluetoothGatt.discoverServices()の結果として呼ばれる。）
@@ -167,6 +173,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 UUID uuid = service.getUuid();
                 if( UUID_SERVICE_PRIVATE.equals( service.getUuid() ) )
                 {
+                    mCommunicating = false;
+
                     //dispMessage("サービスを開始します");
                     // プライベートサービス
                     runOnUiThread( new Runnable()
@@ -200,6 +208,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             // キャラクタリスティックごとに個別の処理
             if( UUID_CHARACTERISTIC_PRIVATE1.equals( characteristic.getUuid() ) )
             {    // キャラクタリスティック１：データサイズは、2バイト（数値を想定。0～65,535）
+
+                mCommunicating = false;
+
                 byte[] byteDataList = characteristic.getValue();
 
                 //受信したデータから設定値を取得
@@ -232,10 +243,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 return;
             }
 
-
             // キャラクタリスティックごとに個別の処理
             if( UUID_CHARACTERISTIC_PRIVATE1.equals( characteristic.getUuid() ) )
             {    // キャラクタリスティック２：データサイズは、8バイト（文字列を想定。半角文字8文字）
+
+                mCommunicating = false;
 
                 byte[] byteDataList = characteristic.getValue();
                 if(byteDataList[0] == DATAID_SETTING)
@@ -256,19 +268,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     } );
                 }
                 else if(byteDataList[0] == DATAID_SYSTEM_END) {
-                    runOnUiThread( new Runnable()
-                    {
-                        public void run()
-                        {
-                            dispMessage(getString(R.string.toast_system_off));
-                        }
-                    } );
+
+                    //runOnUiThread( new Runnable()
+                    //{
+                    //    public void run()
+                    //    {
+                    //        dispMessage(getString(R.string.toast_system_off));
+                    //    }
+                    //} );
                 }
                 else if(byteDataList[0] == DATAID_LOG)
                 {
-                    // ログ画面表示
-                    if(mIsDisplayLog)
+                    // ログ画面非表示　→　表示
+                    if(mIsDisplayLog == false)
                     {
+                        mIsDisplayLog = true;
                         runOnUiThread( new Runnable()
                         {
                             public void run()
@@ -281,8 +295,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             }
                         } );
                     }
+                    // 表示　→　ログ画面非表示
                     else
                     {
+                        mIsDisplayLog = false;
                         runOnUiThread( new Runnable()
                         {
                             public void run()
@@ -300,7 +316,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         } );
                     }
                 }
-
 
                 return;
             }
@@ -348,6 +363,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mButton_DisplayLog =(Button)findViewById(R.id.button_display_log);
         mButton_DisplayLog.setOnClickListener( this );
 
+        mHandler = new Handler();
+
         //ACCESS_FINE_LOCATIONの許可取得
         if(ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION ) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_ACCESS_FINE_LOCAION);
@@ -383,12 +400,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         requestBluetoothFeature();
 
         // GUIアイテムの有効無効の設定
-        mButton_Connect.setEnabled( false );
-        mButton_Disconnect.setEnabled( false );
-        mButton_Poweroff.setEnabled( false );
-        mButton_ReadData.setEnabled( false );
-        mButton_WriteData.setEnabled( false );
-        mButton_DisplayLog.setEnabled( false );
+        initButton();
+        //mButton_StartScan.setEnabled( true );
+        //mButton_Connect.setEnabled( false );
+        //mButton_Disconnect.setEnabled( false );
+        //mButton_Poweroff.setEnabled( false );
+        //mButton_ReadData.setEnabled( false );
+        //mButton_WriteData.setEnabled( false );
+        //mButton_DisplayLog.setEnabled( false );
 
         // デバイスアドレスが空でなければ、接続ボタンを有効にする。
         if( !mDeviceAddress.equals( "" ) )
@@ -397,9 +416,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             // 接続ボタンを押す
             //mButton_Connect.callOnClick();
         }
-
     }
-
 
     // 別のアクティビティ（か別のアプリ）に移行したことで、バックグラウンドに追いやられた時
     @Override
@@ -407,8 +424,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     {
         super.onPause();
 
+        // 通信の切断をするため、通信の監視をやめる
+        mHandler.removeCallbacksAndMessages( null );
         // 切断
         disconnect();
+
+        mButton_StartScan.setEnabled( true );
+        mButton_Poweroff.setEnabled( false );
+        mButton_ReadData.setEnabled( false );
+        mButton_WriteData.setEnabled( false );
+        mButton_DisplayLog.setEnabled( false );
+
+        //コネクト状態 + 受信後の場合のみ、ユーザはNumberPickerから設定可能とする
+        setEnableNP(false);
+
     }
 
     // アクティビティの終了直前
@@ -506,6 +535,43 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             startActivityForResult( devicelistactivityIntent, REQUEST_CONNECTDEVICE );
             return;
         }
+
+        // 通信状況を監視する
+        mHandler.postDelayed( new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                if(mCommunicating == true) {
+                    dispMessage(getString(R.string.toast_communicating_error));
+                    mCommunicating = false;
+                    //mIsDisplayLog = false;
+
+                    runOnUiThread( new Runnable()
+                    {
+                        public void run()
+                        {
+                            // GUIアイテムの有効無効の設定
+                            initButton();
+                            //mButton_StartScan.setEnabled( true );
+                            //mButton_Connect.setEnabled( false );
+                            //mButton_Disconnect.setEnabled( false );
+                            //mButton_Poweroff.setEnabled( false );
+                            //mButton_ReadData.setEnabled( false );
+                            //mButton_WriteData.setEnabled( false );
+                            //mButton_DisplayLog.setEnabled( false );
+                            setEnableNP(false);
+
+                            mDeviceAddress = "";
+                            ( (TextView)findViewById( R.id.textview_devicename ) ).setText("");
+                        }
+                    } );
+
+                }
+            }
+        }, COMMUNICATE_PERIOD );
+
+
         if( mButton_Connect.getId() == v.getId() )
         {
             connect();            // 接続
@@ -515,13 +581,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             return;
         }
+
         if( mButton_Disconnect.getId() == v.getId() )
         {
             mButton_Disconnect.setEnabled( false );    // 切断ボタンの無効化（連打対策）
             disconnect();            // 切断
 
-
-
+            dispMessage(getString(R.string.toast_disconnect));
             mButton_StartScan.setEnabled( true );
             mButton_Poweroff.setEnabled( false );
             mButton_ReadData.setEnabled( false );
@@ -560,7 +626,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if( mButton_WriteData.getId() == v.getId() )
         {
             mButton_WriteData.setEnabled( false );    // 書き込みボタンの無効化（連打対策）
-
+            setEnableNP(false);
 
             //現在の設定値を取得
             DeviceSettingData setData = viewmodel.getDeviceSettingData();
@@ -576,9 +642,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         if( mButton_DisplayLog.getId() == v.getId())
         {
-            if(mIsDisplayLog == false)
-            {
-                mIsDisplayLog = true;
+            // ログ画面非表示の時
+            if(mIsDisplayLog == false) {
+
                 mButton_DisplayLog.setEnabled(false);
 
                 mButton_StartScan.setEnabled(false);
@@ -587,8 +653,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 mButton_Poweroff.setEnabled(false);
                 mButton_ReadData.setEnabled(false);
                 mButton_WriteData.setEnabled(false);
-            } else {
-                mIsDisplayLog = false;
+            }
+            // ログ画面非表示の時
+            else {
+                //mIsDisplayLog = false;
             }
 
             // mButton_DisplayLog.setEnabled( false );    // 書き込みボタンの無効化（連打対策）
@@ -612,15 +680,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             writeCharacteristic(UUID_SERVICE_PRIVATE, UUID_CHARACTERISTIC_PRIVATE1, dataList);
 
-            mButton_StartScan.setEnabled(true);
-            mButton_Connect.setEnabled(false);
-            mButton_Disconnect.setEnabled(false);
-            mButton_ReadData.setEnabled(false);
-            mButton_WriteData.setEnabled(false);
-            mButton_DisplayLog.setEnabled(false);
+            initButton();
+            //mButton_StartScan.setEnabled(true);
+            //mButton_Connect.setEnabled(false);
+            //mButton_Disconnect.setEnabled(false);
+            //mButton_ReadData.setEnabled(false);
+            //mButton_WriteData.setEnabled(false);
+            //mButton_DisplayLog.setEnabled(false);
+            setEnableNP(false);
 
             mDeviceAddress = "";
+            disconnect();
             ( (TextView)findViewById( R.id.textview_devicename ) ).setText("");
+            dispMessage(getString(R.string.toast_system_off));
         }
     };
 
@@ -641,6 +713,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // 接続
         BluetoothDevice device = mBluetoothAdapter.getRemoteDevice( mDeviceAddress );
         mBluetoothGatt = device.connectGatt( this, false, mGattcallback );
+        mCommunicating = true;
     }
 
     // 切断
@@ -676,11 +749,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             return;
         }
         BluetoothGattCharacteristic blechar = mBluetoothGatt.getService( uuid_service ).getCharacteristic( uuid_characteristic );
+        mCommunicating = true;
         boolean res = mBluetoothGatt.readCharacteristic( blechar );
-
-        //結果を表示
-        //dispConnectionResult(connectRecieve, res);
-
     }
 
     // キャラクタリスティックの書き込み
@@ -693,7 +763,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         BluetoothGattCharacteristic blechar = mBluetoothGatt.getService( uuid_service ).getCharacteristic( uuid_characteristic );
         blechar.setValue( dataList );
+        if(dataList[0] != DATAID_SYSTEM_END)
+        {
+            mCommunicating = true;
+        }
         boolean res = mBluetoothGatt.writeCharacteristic( blechar );
+    }
+
+    private void initButton(){
+
+        mButton_StartScan.setEnabled(true);
+        mButton_Connect.setEnabled(false);
+        mButton_Disconnect.setEnabled(false);
+        mButton_Poweroff.setEnabled(false);
+        mButton_ReadData.setEnabled(false);
+        mButton_WriteData.setEnabled(false);
+        mButton_DisplayLog.setEnabled(false);
+
+        return;
     }
 
     /**
